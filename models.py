@@ -35,3 +35,21 @@ class User(db.Model):
             'email': self.email,
             'role': self.role
         }
+
+
+class Volunteer(db.Model):
+    __tablename__ = 'volunteers'
+    
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    is_available = db.Column(db.Boolean, default=True)
+    service_area = db.Column(db.String(100), nullable=False)
+
+
+class DeliveryProof(db.Model):
+    __tablename__ = 'delivered'
+    
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    donation_id = db.Column(db.Integer, db.ForeignKey('donation.id'), nullable=False)
+    photo = db.Column(db.String(25600), nullable=False)
+    feedback = db.Column(db.String(500))
