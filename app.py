@@ -97,3 +97,63 @@ def signup():
             return redirect(url_for('signup'))
     
     return render_template('signup.html')
+    
+
+@app.route('/dashboard/volunteer', methods=['GET', 'POST'])
+def volunteer():
+    if session.get('role')=='volunteer':
+        if request.method == 'GET':
+            volunteer = Volunteer.query.filter_by(user_id=session['user_id']).first()
+            available_donations = Donation.query.filter(
+                Donation.status.like(f'accepted,%')
+            ).filter(
+                Donation.status.like(f'%,{volunteer.id}')
+            ).order_by(Donation.expiry_date.desc()).all()
+
+            past_donations = Donation.query.filter(
+                Donation.status.like(f'delivered,%')
+            ).filter(
+                Donation.status.like(f'%,{volunteer.id}')
+            ).order_by(Donation.expiry_date.desc()).all()
+            return render_template('volunteer.html', donations=available_donations, past_donations=past_donations, acceptedby=acceptedby, getRestaurant=getRestaurant)
+    else:
+            return render_template('volunteer.html')
+
+
+@app.route('/profile', methods=['GET', 'POST'])
+def profile():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user = User.query.get(session['user_id'])
+    if request.method == 'GET':
+        if user.role == 'restaurant':
+            restaurant = Restaurant.query.filter_by(user_id=user.id).first()
+            return render_template('profile.html', User=user, Restaurant=restaurant, address=restaurant.address, getTotalDonation=getTotalDonation)
+        if user.role == 'ngo':
+            ngo = NGO.query.filter_by(user_id=user.id).first()
+            return render_template('profile.html', User=user, Ngo=ngo, address=ngo.service_area, getTotalDonation=getTotalDonation)
+        if user.role == 'volunteer':
+            volunteer = Volunteer.query.filter_by(user_id=user.id).first()
+            return render_template('profile.html', User=user, Volunteer=volunteer, address=volunteer.service_area, getTotalDonation=getTotalDonation) 
+    if request.method == 'POST':
+        if user.role == 'restaurant':
+            restaurant = Restaurant.query.filter_by(user_id=user.id).first()
+            user.username = request.form['username']
+            restaurant.address = request.form['address']
+            db.session.commit()
+            flash('Profile updated successfully', 'success')
+            return redirect(url_for('profile'))
+        if user.role == 'ngo':
+            ngo = NGO.query.filter_by(user_id=user.id).first()
+            user.username = request.form['username']
+            ngo.service_area = request.form['address']
+            db.session.commit()
+            flash('Profile updated successfully', 'success')
+            return redirect(url_for('profile'))
+        if user.role == 'volunteer':
+            volunteer = Volunteer.query.filter_by(user_id=user.id).first()
+            user.username = request.form['username']
+            volunteer.service_area = request.form['address']
+            db.session.commit()
+            flash('Profile updated successfully', 'success')
+            return redirect(url_for('profile'))
