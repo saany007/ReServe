@@ -118,3 +118,21 @@ def volunteer():
             return render_template('volunteer.html', donations=available_donations, past_donations=past_donations, acceptedby=acceptedby, getRestaurant=getRestaurant)
     else:
             return render_template('volunteer.html')
+@app.route('/dashboard/ngo', methods=['GET', 'POST'])
+def ngo():
+    if session.get('role')=='ngo':
+        if request.method == 'GET':
+            ngo = NGO.query.filter_by(user_id=session['user_id']).first()
+            
+            available_donations = Donation.query.filter(
+                (Donation.status == 'pending') &
+                (Donation.preference == ngo.focus_area) &
+                (Donation.restaurant.has(address=ngo.service_area))
+            ).order_by(Donation.expiry_date.desc()).all()
+            past_donations = Donation.query.filter(
+                (Donation.status.like(f'accepted,{ngo.id},%')) | 
+                (Donation.status.like(f'delivered,{ngo.id},%'))
+            ).order_by(Donation.expiry_date.desc()).all()
+            return render_template('ngo.html', donations=available_donations, past_donations=past_donations, acceptedby=acceptedby, getRestaurant=getRestaurant)
+    else:
+            return render_template('ngo.html')
