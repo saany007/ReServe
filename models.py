@@ -37,6 +37,27 @@ class User(db.Model):
         }
 
 
+
+class Restaurant(db.Model):
+    __tablename__ = 'restaurant'
+    
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    address = db.Column(db.String(200), nullable=False)
+    donations = db.relationship('Donation', backref='restaurant', lazy=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'name': self.name,
+            'address': self.address,
+            'cuisine': self.cuisine
+        }
+
+
+
 class Volunteer(db.Model):
     __tablename__ = 'volunteers'
     
