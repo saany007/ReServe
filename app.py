@@ -99,6 +99,47 @@ def signup():
     return render_template('signup.html')
     
 
+@app.route('/dashboard')
+def getDashboard():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    if session['role'] == 'restaurant':
+        return redirect(url_for('restaurant'))
+    if session['role'] == 'ngo':
+        return redirect(url_for('ngo'))
+    if session['role'] == 'volunteer':
+        return redirect(url_for('volunteer'))
+
+
+
+""" Restaurant Dashboard Area """
+@app.route('/dashboard/restaurant', methods=['GET', 'POST'])
+def restaurant():
+    if session.get('role')=='restaurant':
+        if request.method == 'POST':
+            restaurant = Restaurant.query.filter_by(user_id=session['user_id']).first()
+            donation = Donation(
+                user_id=session['user_id'],
+                description=request.form['description'],
+                quantity=request.form['quantity'],
+                restaurant_id=restaurant.id,
+                preference=request.form['preference'],
+                expiry_date=request.form['expiry_date']
+            )
+            db.session.add(donation)
+            db.session.commit()
+            flash('Donation created successfully')
+            return redirect(url_for('getDashboard'))
+
+        elif request.method == 'GET':
+            donations = Donation.query.filter_by(user_id=session['user_id']).order_by(Donation.expiry_date.desc()).all()
+            return render_template('restaurant.html', donations=donations, acceptedby=acceptedby)
+
+    else:
+        return redirect(url_for('getDashboard'))
+
+
+
 @app.route('/dashboard/volunteer', methods=['GET', 'POST'])
 def volunteer():
     if session.get('role')=='volunteer':
@@ -118,6 +159,9 @@ def volunteer():
             return render_template('volunteer.html', donations=available_donations, past_donations=past_donations, acceptedby=acceptedby, getRestaurant=getRestaurant)
     else:
             return render_template('volunteer.html')
+    
+
+
 @app.route('/dashboard/ngo', methods=['GET', 'POST'])
 def ngo():
     if session.get('role')=='ngo':
