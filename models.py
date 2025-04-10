@@ -38,6 +38,30 @@ class User(db.Model):
 
 
 
+class Donation(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurant.id'), nullable=False)
+    description = db.Column(db.String(500), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    preference = db.Column(db.String(50), nullable=False)  # 'street_animal' or 'people'
+    status = db.Column(db.String(50), default='pending')  # pending, accepted, completed, cancelled
+    expiry_date = db.Column(db.String(50), nullable=False)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'restaurant_id': self.restaurant_id,
+            'food_item': self.description,
+            'quantity': self.quantity,
+            'recipient_type': self.preference,
+            'status': self.status,
+            'expiry_date': self.expiry_date.isoformat()
+        }
+
+
+
 class Restaurant(db.Model):
     __tablename__ = 'restaurant'
     
