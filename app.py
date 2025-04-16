@@ -139,6 +139,35 @@ def restaurant():
         return redirect(url_for('getDashboard'))
 
 
+@app.route('/cancel_donation/<int:donation_id>')
+def cancel_donation(donation_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    user = User.query.get(session['user_id'])
+    if user.role != 'restaurant':
+        flash('Only restaurants can cancel donations')
+        return redirect(url_for('index'))
+
+    donation = Donation.query.get_or_404(donation_id)
+    
+    if donation.user_id != session['user_id']:
+        flash('You can only cancel your own donations')
+        return redirect(url_for('restaurant'))
+    
+    if donation.status != 'pending':
+        flash('You can only cancel pending donations')
+        return redirect(url_for('restaurant'))
+
+    db.session.delete(donation)
+    db.session.commit()
+    flash('Donation cancelled successfully')
+    return redirect(url_for('restaurant'))
+
+
+
+
+
 
 @app.route('/dashboard/volunteer', methods=['GET', 'POST'])
 def volunteer():
