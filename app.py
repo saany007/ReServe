@@ -159,6 +159,7 @@ def volunteer():
             return render_template('volunteer.html', donations=available_donations, past_donations=past_donations, acceptedby=acceptedby, getRestaurant=getRestaurant)
     else:
             return render_template('volunteer.html')
+        
     
 
 
@@ -180,3 +181,25 @@ def ngo():
             return render_template('ngo.html', donations=available_donations, past_donations=past_donations, acceptedby=acceptedby, getRestaurant=getRestaurant)
     else:
             return render_template('ngo.html')
+        
+        
+        
+@app.route('/deliver_donation/<int:donation_id>', methods=['POST'])
+def deliver_donation(donation_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    if session['role'] != 'volunteer':
+        flash('Only volunteers can deliver donations', 'warning')
+        return redirect(url_for('index'))
+    volunteer = Volunteer.query.filter_by(user_id=session['user_id']).first()
+    donation = Donation.query.get_or_404(donation_id)
+    photo = request.files['proof']
+    feedback = request.form['feedback']
+    proof = DeliveryProof(donation_id=donation_id, photo=photo.read(), feedback=feedback)
+    db.session.add(proof)
+    restaurant = donation.status.split(',')[1]
+    donation.status = f'delivered,{restaurant},{volunteer.id}'
+    db.session.commit()
+    flash('Donation delivered successfully', 'success')
+    return redirect(url_for('volunteer'))
