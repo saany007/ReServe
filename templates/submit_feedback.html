@@ -1,0 +1,54 @@
+{% extends 'bootstrap.html' %}
+
+{% block title %}Submit Feedback{% endblock %}
+
+{% block body %}
+<div class="container my-5">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h2 class="mb-0">Submit Feedback for Donation</h2>
+        </div>
+        <div class="card-body">
+            <h5 class="card-title">Donation Details</h5>
+            <p><strong>Food Item:</strong> {{ donation.description }}</p>
+            <p><strong>Quantity:</strong> {{ donation.quantity }}</p>
+            <p><strong>Expiry Date:</strong> {{ donation.expiry_date }}</p>
+            
+            <hr class="my-4">
+            
+            <h5 class="card-title">Your Feedback</h5>
+            <form action="{{ url_for('submit_feedback', donation_id=donation.id) }}" method="POST">
+                <div class="mb-3">
+                    <label for="rating" class="form-label">Quality Rating (1-5)</label>
+                    <div class="rating-input">
+                        <select class="form-select" id="rating" name="rating" required>
+                            <option value="" disabled selected>Select rating</option>
+                            <option value="5">5 - Excellent</option>
+                            <option value="4">4 - Good</option>
+                            <option value="3">3 - Average</option>
+                            <option value="2">2 - Below Average</option>
+                            <option value="1">1 - Poor</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="comments" class="form-label">Comments</label>
+                    <textarea class="form-control" id="comments" name="comments" rows="4" placeholder="Please provide feedback about the quality, condition, and usefulness of the donated food..." required></textarea>
+                </div>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{{ url_for('ngo') }}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Submit Feedback</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
