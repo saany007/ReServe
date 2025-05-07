@@ -169,6 +169,7 @@ def cancel_donation(donation_id):
 
 
 
+
 @app.route('/dashboard/volunteer', methods=['GET', 'POST'])
 def volunteer():
     if session.get('role')=='volunteer':
@@ -192,6 +193,7 @@ def volunteer():
     
 
 
+""" NGO Dashboard Area """
 @app.route('/dashboard/ngo', methods=['GET', 'POST'])
 def ngo():
     if session.get('role')=='ngo':
@@ -207,9 +209,107 @@ def ngo():
                 (Donation.status.like(f'accepted,{ngo.id},%')) | 
                 (Donation.status.like(f'delivered,{ngo.id},%'))
             ).order_by(Donation.expiry_date.desc()).all()
-            return render_template('ngo.html', donations=available_donations, past_donations=past_donations, acceptedby=acceptedby, getRestaurant=getRestaurant)
+            
+            # Get all donations that have feedback
+            donations_with_feedback = DonationFeedback.query.filter(
+                DonationFeedback.ngo_id == ngo.id
+            ).all()
+            donation_ids_with_feedback = [f.donation_id for f in donations_with_feedback]
+            
+            return render_template('ngo.html', 
+                                  donations=available_donations, 
+                                  past_donations=past_donations, 
+                                  acceptedby=acceptedby, 
+                                  getRestaurant=getRestaurant,
+                                  donation_ids_with_feedback=donation_ids_with_feedback)
     else:
             return render_template('ngo.html')
+
+
+@app.route('/submit_feedback/<int:donation_id>', methods=['GET', 'POST'])
+def submit_feedback(donation_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    if session['role'] != 'ngo':
+        flash('Only NGOs can provide feedback', 'danger')
+        return redirect(url_for('index'))
+    
+    ngo = NGO.query.filter_by(user_id=session['user_id']).first()
+    donation = Donation.query.get_or_404(donation_id)
+    
+    # Check if the donation was delivered to this NGO
+    if not donation.status.startswith(f'delivered,{ngo.id},'):
+        flash('You can only provide feedback for donations delivered to your organization', 'danger')
+        return redirect(url_for('ngo'))
+    
+    # Check if feedback already exists
+    existing_feedback = DonationFeedback.query.filter_by(donation_id=donation_id, ngo_id=ngo.id).first()
+    if existing_feedback:
+        flash('You have already provided feedback for this donation', 'warning')
+        return redirect(url_for('ngo'))
+    
+    if request.method == 'POST':
+        rating = int(request.form.get('rating'))  # Convert to int explicitly
+        comments = request.form.get('comments')
+        
+        feedback = DonationFeedback(
+            donation_id=donation_id,
+            ngo_id=ngo.id,
+            rating=rating,
+            comments=comments
+        )
+        
+        db.session.add(feedback)
+        db.session.commit()
+        
+        flash('Thank you for your feedback!', 'success')
+        return redirect(url_for('ngo'))
+    
+    return render_template('submit_feedback.html', donation=donation)
+
+
+@app.route('/choose_volunteer/<int:donation_id>', methods=['GET'])
+def choose_volunteer(donation_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    if session['role'] != 'ngo':
+        flash('Only NGOs can choose volunteers')
+        return redirect(url_for('index'))
+    ngo = NGO.query.filter_by(user_id=session['user_id']).first()
+    donation = Donation.query.get_or_404(donation_id)
+    address = Restaurant.query.filter_by(id=donation.restaurant_id).first().address
+    volunteer = Volunteer.query.filter(Volunteer.service_area.like(f'%{address}%'))
+    volunteers = volunteer.all()
+    return render_template('volunteers.html', volunteers=volunteers, donation=donation, getVolunteerName=getVolunteerName)
+
+
+def getVolunteerName(id):
+    return User.query.filter_by(id=id).first().username
+
+
+
+@app.route('/accept_donation/<int:donation_id>/<int:volunteer_id>')
+def accept_donation(donation_id, volunteer_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+   
+    if session['role'] != 'ngo':
+        flash('Only NGOs can accept donations', 'danger')
+        return redirect(url_for('index'))
+    ngo = NGO.query.filter_by(user_id=session['user_id']).first()
+    donation = Donation.query.get_or_404(donation_id)
+    donation.status = f'accepted,{ngo.id},{volunteer_id}'
+    db.session.commit()
+    flash('Donation accepted successfully', 'success')
+    return redirect(url_for('ngo'))
+
+
+
+def getRestaurant(id):
+    return Restaurant.query.filter_by(id=id).first()
         
         
         
