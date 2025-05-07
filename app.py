@@ -133,6 +133,7 @@ def restaurant():
 
         elif request.method == 'GET':
             donations = Donation.query.filter_by(user_id=session['user_id']).order_by(Donation.expiry_date.desc()).all()
+            feedback_list = DonationFeedback.query.join(Donation).filter(Donation.user_id == session['user_id']).all()
             return render_template('restaurant.html', donations=donations, acceptedby=acceptedby)
 
     else:
@@ -163,6 +164,19 @@ def cancel_donation(donation_id):
     db.session.commit()
     flash('Donation cancelled successfully')
     return redirect(url_for('restaurant'))
+
+
+
+def acceptedby(donation_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    user = User.query.get(session['user_id'])
+
+    donation = Donation.query.get_or_404(donation_id)
+    ngo_id = donation.status.split(',')[1]
+    ngo = NGO.query.filter(NGO.id == ngo_id).first()
+    return ngo.name
 
 
 
@@ -286,8 +300,7 @@ def getRestaurant(id):
         
 
 
-
-
+""" Volunteer Dashboard Area """
 @app.route('/dashboard/volunteer', methods=['GET', 'POST'])
 def volunteer():
     if session.get('role')=='volunteer':
@@ -307,9 +320,6 @@ def volunteer():
             return render_template('volunteer.html', donations=available_donations, past_donations=past_donations, acceptedby=acceptedby, getRestaurant=getRestaurant)
     else:
             return render_template('volunteer.html')
-        
-    
-
 
         
         
@@ -397,3 +407,104 @@ def download_certificate(donation_id):
         mimetype='text/plain'
     )
         
+
+
+@app.route('/profile', methods=['GET', 'POST'])
+def profile():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user = User.query.get(session['user_id'])
+    if request.method == 'GET':
+        if user.role == 'restaurant':
+            restaurant = Restaurant.query.filter_by(user_id=user.id).first()
+            return render_template('profile.html', User=user, Restaurant=restaurant, address=restaurant.address, getTotalDonation=getTotalDonation)
+        if user.role == 'ngo':
+            ngo = NGO.query.filter_by(user_id=user.id).first()
+            return render_template('profile.html', User=user, Ngo=ngo, address=ngo.service_area, getTotalDonation=getTotalDonation)
+        if user.role == 'volunteer':
+            volunteer = Volunteer.query.filter_by(user_id=user.id).first()
+            return render_template('profile.html', User=user, Volunteer=volunteer, address=volunteer.service_area, getTotalDonation=getTotalDonation) 
+    if request.method == 'POST':
+        if user.role == 'restaurant':
+            restaurant = Restaurant.query.filter_by(user_id=user.id).first()
+            user.username = request.form['username']
+            restaurant.address = request.form['address']
+            db.session.commit()
+            flash('Profile updated successfully', 'success')
+            return redirect(url_for('profile'))
+        if user.role == 'ngo':
+            ngo = NGO.query.filter_by(user_id=user.id).first()
+            user.username = request.form['username']
+            ngo.service_area = request.form['address']
+            db.session.commit()
+            flash('Profile updated successfully', 'success')
+            return redirect(url_for('profile'))
+        if user.role == 'volunteer':
+            volunteer = Volunteer.query.filter_by(user_id=user.id).first()
+            user.username = request.form['username']
+            volunteer.service_area = request.form['address']
+            db.session.commit()
+            flash('Profile updated successfully', 'success')
+            return redirect(url_for('profile'))
+
+
+
+@app.route('/profile/<role>/<int:id>', methods=['GET'])
+def getProfile(role, id):
+    if role == 'restaurant':
+        restaurant = Restaurant.query.filter_by(id=id).first()
+        user = User.query.filter_by(id=restaurant.user_id).first()
+        return render_template('profile.html', User=user, public=True, address=restaurant.address, getTotalDonation=getTotalDonation)
+    if role == 'ngo':
+        ngo = NGO.query.filter_by(id=id).first()
+        user = User.query.filter_by(id=ngo.user_id).first()
+        return render_template('profile.html', User=user, public=True, address=ngo.service_area, getTotalDonation=getTotalDonation)
+    if role == 'volunteer':
+        volunteer = Volunteer.query.filter_by(id=id).first()
+        user = User.query.filter_by(id=volunteer.user_id).first()
+        return render_template('profile.html', User=user, public=True, address=volunteer.service_area, getTotalDonation=getTotalDonation)
+
+
+
+def getTotalDonation(id):
+    user = User.query.get(id)
+    if user.role == 'restaurant':
+        return Donation.query.filter_by(user_id=user.id).count()
+    elif user.role == 'ngo':
+        ngo = NGO.query.filter_by(user_id=user.id).first()
+        past_donations = Donation.query.filter(
+            (Donation.status.like(f'accepted,{ngo.id},%')) | 
+            (Donation.status.like(f'delivered,{ngo.id},%'))
+        ).order_by(Donation.expiry_date.desc()).count()
+        return past_donations
+    elif user.role == 'volunteer':
+        volunteer = Volunteer.query.filter_by(user_id=user.id).first()
+        available_donations = Donation.query.filter(
+            Donation.status.like(f'accepted,%')
+        ).filter(
+            Donation.status.like(f'%,{volunteer.id}')
+        ).order_by(Donation.expiry_date.desc()).count()
+
+        past_donations = Donation.query.filter(
+            Donation.status.like(f'delivered,%')
+        ).filter(
+            Donation.status.like(f'%,{volunteer.id}')
+        ).order_by(Donation.expiry_date.desc()).count()
+        return available_donations + past_donations
+
+
+def getDonationFeedback(donation_id):
+    feedback = DonationFeedback.query.filter_by(donation_id=donation_id).first()
+    return feedback
+
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash('Logged out successfully!', 'success')
+    return redirect(url_for('login'))
+
+
+
+if __name__ == '__main__':
+    app.run(debug=True, port=8888)
