@@ -48,6 +48,9 @@ class Donation(db.Model):
     status = db.Column(db.String(50), default='pending')  # pending, accepted, completed, cancelled
     expiry_date = db.Column(db.String(50), nullable=False)
 
+    # Add relationship to DonationFeedback
+    feedback = db.relationship('DonationFeedback', backref='donation', lazy=True)
+    
     def to_dict(self):
         return {
             'id': self.id,
@@ -81,6 +84,45 @@ class Restaurant(db.Model):
         }
 
 
+class NGO(db.Model):
+    __tablename__ = 'ngos'
+    
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    focus_area = db.Column(db.String(100), nullable=False)
+    service_area = db.Column(db.String(100), nullable=False)
+    type = db.Column(db.String(50))
+    
+    # Add relationship to DonationFeedback
+    feedback_given = db.relationship('DonationFeedback', backref='ngo', lazy=True)
+    
+    __mapper_args__ = {
+        'polymorphic_identity': 'ngo',
+        'polymorphic_on': type
+    }
+
+class StreetAnimalNGO(NGO):
+    __tablename__ = 'street_animal_ngos'
+    
+    id = db.Column(db.Integer, db.ForeignKey('ngos.id'), primary_key=True)
+    animal_type = db.Column(db.String(50), nullable=False)
+    
+    __mapper_args__ = {
+        'polymorphic_identity': 'street_animal'
+    }
+
+class NeedyPeopleNGO(NGO):
+    __tablename__ = 'needy_people_ngos'
+    
+    id = db.Column(db.Integer, db.ForeignKey('ngos.id'), primary_key=True)
+    target_demographic = db.Column(db.String(100), nullable=False)
+    
+    __mapper_args__ = {
+        'polymorphic_identity': 'needy_people'
+    }
+
+
 
 class Volunteer(db.Model):
     __tablename__ = 'volunteers'
@@ -98,3 +140,20 @@ class DeliveryProof(db.Model):
     donation_id = db.Column(db.Integer, db.ForeignKey('donation.id'), nullable=False)
     photo = db.Column(db.String(25600), nullable=False)
     feedback = db.Column(db.String(500))
+
+
+class DonationFeedback(db.Model):
+    __tablename__ = 'donation_feedback'
+    
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    donation_id = db.Column(db.Integer, db.ForeignKey('donation.id'), nullable=False)
+    ngo_id = db.Column(db.Integer, db.ForeignKey('ngos.id'), nullable=False)
+    rating = db.Column(db.Integer, nullable=False)  # Rating from 1-5
+    comments = db.Column(db.String(500))
+    submitted_date = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def __init__(self, donation_id, ngo_id, rating, comments):
+        self.donation_id = donation_id
+        self.ngo_id = ngo_id
+        self.rating = int(rating)  # Ensure rating is stored as integer
+        self.comments = comments
