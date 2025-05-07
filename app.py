@@ -166,33 +166,6 @@ def cancel_donation(donation_id):
 
 
 
-
-
-
-
-@app.route('/dashboard/volunteer', methods=['GET', 'POST'])
-def volunteer():
-    if session.get('role')=='volunteer':
-        if request.method == 'GET':
-            volunteer = Volunteer.query.filter_by(user_id=session['user_id']).first()
-            available_donations = Donation.query.filter(
-                Donation.status.like(f'accepted,%')
-            ).filter(
-                Donation.status.like(f'%,{volunteer.id}')
-            ).order_by(Donation.expiry_date.desc()).all()
-
-            past_donations = Donation.query.filter(
-                Donation.status.like(f'delivered,%')
-            ).filter(
-                Donation.status.like(f'%,{volunteer.id}')
-            ).order_by(Donation.expiry_date.desc()).all()
-            return render_template('volunteer.html', donations=available_donations, past_donations=past_donations, acceptedby=acceptedby, getRestaurant=getRestaurant)
-    else:
-            return render_template('volunteer.html')
-        
-    
-
-
 """ NGO Dashboard Area """
 @app.route('/dashboard/ngo', methods=['GET', 'POST'])
 def ngo():
@@ -311,6 +284,33 @@ def accept_donation(donation_id, volunteer_id):
 def getRestaurant(id):
     return Restaurant.query.filter_by(id=id).first()
         
+
+
+
+
+@app.route('/dashboard/volunteer', methods=['GET', 'POST'])
+def volunteer():
+    if session.get('role')=='volunteer':
+        if request.method == 'GET':
+            volunteer = Volunteer.query.filter_by(user_id=session['user_id']).first()
+            available_donations = Donation.query.filter(
+                Donation.status.like(f'accepted,%')
+            ).filter(
+                Donation.status.like(f'%,{volunteer.id}')
+            ).order_by(Donation.expiry_date.desc()).all()
+
+            past_donations = Donation.query.filter(
+                Donation.status.like(f'delivered,%')
+            ).filter(
+                Donation.status.like(f'%,{volunteer.id}')
+            ).order_by(Donation.expiry_date.desc()).all()
+            return render_template('volunteer.html', donations=available_donations, past_donations=past_donations, acceptedby=acceptedby, getRestaurant=getRestaurant)
+    else:
+            return render_template('volunteer.html')
+        
+    
+
+
         
         
 @app.route('/deliver_donation/<int:donation_id>', methods=['POST'])
