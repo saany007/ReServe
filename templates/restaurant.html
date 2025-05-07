@@ -48,6 +48,7 @@ Restaurant Dashboard
             <th>Food Items</th>
             <th>For</th>
             <th>Acceptance Status</th>
+            <th>Feedback</th>
             </tr>
         </thead>
         <tbody>
@@ -67,6 +68,29 @@ Restaurant Dashboard
                 {% elif donation.status.split(',')[0] == 'delivered' %}
                 <span class="badge p-3 rounded-pill bg-success">Delivered</span> to <b>{{ acceptedby(donation.id) }}</b>
                 {% endif %}
+            </td>
+            <td>
+                {% for feedback in feedback_list %}
+                    {% if feedback.donation_id == donation.id %}
+                        <div class="card p-2">
+                            <div class="card-body p-2">
+                                <h6 class="card-subtitle mb-2 text-muted">Rating: 
+                                    <!-- Numeric display as fallback -->
+                                    {{ feedback.rating }}/5
+                                    <!-- Star display (make sure you have Font Awesome included in your bootstrap.html) -->
+                                    <br>
+                                    {% for i in range(feedback.rating) %}
+                                        ⭐
+                                    {% endfor %}
+                                    {% for i in range(5 - feedback.rating) %}
+                                        ☆
+                                    {% endfor %}
+                                </h6>
+                                <p class="card-text">{{ feedback.comments }}</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
             </td>
             </tr>
             {% endfor %}
