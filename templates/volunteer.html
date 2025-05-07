@@ -84,6 +84,7 @@
                     <td>{{ donation.expiry_date }}</td>
                     <td>{{ getRestaurant(donation.restaurant_id).name }}</td>
                     <td><span class="badge p-2 rounded-pill bg-success">{{ donation.status.split(',')[0] }}</span></td>
+                    <td><a href="{{ url_for('download_certificate', donation_id=donation.id) }}" class="btn btn-sm btn-outline-success mt-1">Download Certificate</a></td>
                 </tr>
                 {% endfor %}
             </tbody>
