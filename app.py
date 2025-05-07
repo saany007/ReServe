@@ -403,7 +403,7 @@ def download_certificate(donation_id):
     return send_file(
         certificate_file,
         as_attachment=True,
-        download_name=f'mealmatch_certificate_{donation_id}.txt',
+        download_name=f'reserve_certificate_{donation_id}.txt',
         mimetype='text/plain'
     )
         
