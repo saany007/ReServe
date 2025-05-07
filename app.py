@@ -232,3 +232,68 @@ def deliver_donation(donation_id):
     db.session.commit()
     flash('Donation delivered successfully', 'success')
     return redirect(url_for('volunteer'))
+
+
+@app.route('/download_certificate/<int:donation_id>')
+def download_certificate(donation_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    donation = Donation.query.get_or_404(donation_id)
+    
+    if session['role'] != 'volunteer':
+        flash('Only volunteers can download certificates', 'warning')
+        return redirect(url_for('index'))
+    
+    volunteer = Volunteer.query.filter_by(user_id=session['user_id']).first()
+    
+    status_parts = donation.status.split(',')
+    if len(status_parts) < 3 or status_parts[0] != 'delivered' or int(status_parts[2]) != volunteer.id:
+        flash('You can only download certificates for your own deliveries', 'warning')
+        return redirect(url_for('volunteer'))
+    
+    restaurant = Restaurant.query.get(donation.restaurant_id)
+    ngo_id = status_parts[1]
+    ngo = NGO.query.get(ngo_id)
+    
+    from io import BytesIO
+    from datetime import datetime
+    from flask import send_file
+    
+    certificate_content = f"""
+    ===== ReServe DELIVERY CERTIFICATE =====
+    
+    This certifies that:
+    
+    Volunteer: {User.query.get(session['user_id']).username}
+    
+    Successfully delivered a donation from:
+    Restaurant: {restaurant.name}
+    Address: {restaurant.address}
+    
+    To:
+    NGO: {ngo.name}
+    Focus Area: {ngo.focus_area}
+    
+    Donation Details:
+    - Description: {donation.description}
+    - Quantity: {donation.quantity}
+    - Delivered On: {datetime.now().strftime('%Y-%m-%d')}
+    
+    Thank you for your service in helping reduce food waste
+    and supporting those in need!
+    
+    ===== ReServe - CONNECTING RESTAURANTS WITH NGOS =====
+    """
+    
+    certificate_file = BytesIO()
+    certificate_file.write(certificate_content.encode('utf-8'))
+    certificate_file.seek(0)
+    
+    return send_file(
+        certificate_file,
+        as_attachment=True,
+        download_name=f'mealmatch_certificate_{donation_id}.txt',
+        mimetype='text/plain'
+    )
+        
