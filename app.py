@@ -134,7 +134,7 @@ def restaurant():
         elif request.method == 'GET':
             donations = Donation.query.filter_by(user_id=session['user_id']).order_by(Donation.expiry_date.desc()).all()
             feedback_list = DonationFeedback.query.join(Donation).filter(Donation.user_id == session['user_id']).all()
-            return render_template('restaurant.html', donations=donations, acceptedby=acceptedby)
+            return render_template('restaurant.html', donations=donations, acceptedby=acceptedby, feedback_list=feedback_list)
 
     else:
         return redirect(url_for('getDashboard'))
