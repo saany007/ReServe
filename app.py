@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 from flask_sqlalchemy import SQLAlchemy
 from models import *
 import logging
+from serverless_wsgi import handle_request  # Add this
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-here'  # Change this to a secure secret key
@@ -505,6 +506,10 @@ def logout():
     return redirect(url_for('login'))
 
 
-
 if __name__ == '__main__':
     app.run(debug=True, port=8888)
+
+
+# Add this handler at the end
+def vercel_handler(request, context):
+    return handle_request(app, request, context)
