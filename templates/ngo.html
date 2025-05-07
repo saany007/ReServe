@@ -55,6 +55,7 @@
                     <th>Expiry Date</th>
                     <th>By</th>
                     <th>Status</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -66,6 +67,13 @@
                     <td>{{ donation.expiry_date }}</td>
                     <td>{{ getRestaurant(donation.restaurant_id).name }}</td>
                     <td><span class="badge p-2 rounded-pill bg-success">{{ donation.status.split(',')[0] }}</span></td>
+                    <td>
+                        {% if donation.status.split(',')[0] == 'delivered' and donation.id not in donation_ids_with_feedback %}
+                            <a href="{{ url_for('submit_feedback', donation_id=donation.id) }}" class="btn btn-info btn-sm">Leave Feedback</a>
+                        {% elif donation.id in donation_ids_with_feedback %}
+                            <span class="badge p-2 rounded-pill bg-secondary">Feedback Submitted</span>
+                        {% endif %}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
