@@ -418,17 +418,18 @@ def profile():
     if request.method == 'GET':
         if user.role == 'restaurant':
             restaurant = Restaurant.query.filter_by(user_id=user.id).first()
-            return render_template('profile.html', User=user, Restaurant=restaurant, address=restaurant.address, getTotalDonation=getTotalDonation)
+            return render_template('profile.html', User=user, user=user, Restaurant=restaurant, email=user.email, address=restaurant.address, getTotalDonation=getTotalDonation)
         if user.role == 'ngo':
             ngo = NGO.query.filter_by(user_id=user.id).first()
-            return render_template('profile.html', User=user, Ngo=ngo, address=ngo.service_area, getTotalDonation=getTotalDonation)
+            return render_template('profile.html', User=user, user=user, Ngo=ngo, email=user.email, address=ngo.service_area, getTotalDonation=getTotalDonation)
         if user.role == 'volunteer':
             volunteer = Volunteer.query.filter_by(user_id=user.id).first()
-            return render_template('profile.html', User=user, Volunteer=volunteer, address=volunteer.service_area, getTotalDonation=getTotalDonation) 
+            return render_template('profile.html', User=user, user=user, Volunteer=volunteer, email=user.email, address=volunteer.service_area, getTotalDonation=getTotalDonation) 
     if request.method == 'POST':
         if user.role == 'restaurant':
             restaurant = Restaurant.query.filter_by(user_id=user.id).first()
             user.username = request.form['username']
+            user.email = request.form['email']
             restaurant.address = request.form['address']
             db.session.commit()
             flash('Profile updated successfully', 'success')
@@ -436,6 +437,7 @@ def profile():
         if user.role == 'ngo':
             ngo = NGO.query.filter_by(user_id=user.id).first()
             user.username = request.form['username']
+            user.email = request.form['email']
             ngo.service_area = request.form['address']
             db.session.commit()
             flash('Profile updated successfully', 'success')
@@ -443,6 +445,7 @@ def profile():
         if user.role == 'volunteer':
             volunteer = Volunteer.query.filter_by(user_id=user.id).first()
             user.username = request.form['username']
+            user.email = request.form['email']
             volunteer.service_area = request.form['address']
             db.session.commit()
             flash('Profile updated successfully', 'success')
@@ -455,15 +458,15 @@ def getProfile(role, id):
     if role == 'restaurant':
         restaurant = Restaurant.query.filter_by(id=id).first()
         user = User.query.filter_by(id=restaurant.user_id).first()
-        return render_template('profile.html', User=user, public=True, address=restaurant.address, getTotalDonation=getTotalDonation)
+        return render_template('profile.html', User=user, user=user, public=True, address=restaurant.address, getTotalDonation=getTotalDonation)
     if role == 'ngo':
         ngo = NGO.query.filter_by(id=id).first()
         user = User.query.filter_by(id=ngo.user_id).first()
-        return render_template('profile.html', User=user, public=True, address=ngo.service_area, getTotalDonation=getTotalDonation)
+        return render_template('profile.html', User=user, user=user, public=True, address=ngo.service_area, getTotalDonation=getTotalDonation)
     if role == 'volunteer':
         volunteer = Volunteer.query.filter_by(id=id).first()
         user = User.query.filter_by(id=volunteer.user_id).first()
-        return render_template('profile.html', User=user, public=True, address=volunteer.service_area, getTotalDonation=getTotalDonation)
+        return render_template('profile.html', User=user, user=user, public=True, address=volunteer.service_area, getTotalDonation=getTotalDonation)
 
 
 
